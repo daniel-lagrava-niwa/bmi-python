@@ -273,7 +273,9 @@ class BMIWrapper(IBmi):
         # We know that the reach ID is on the 4th column of the csv
         # we ignore the first row which is the name
         self.reach_ids = river_data[1:,3].astype(int)
-        print(self.reach_ids)
+        self.lats = river_data[1:,7]
+        self.lons = river_data[1:,9]
+        print(self.reach_ids, self.lats, self.lons)
         
         # List of variables that should be read from netcdf
         self.from_netcdf = ["gw_sw_flux"]
@@ -648,6 +650,11 @@ class BMIWrapper(IBmi):
             array = np.ctypeslib.as_array(data.contents)
         else:
             array = structs2pandas(data.contents)
+
+        if name in self.to_netcdf:
+            current_time = self.get_current_time()
+            bmi.netcdf_utils.write_netcdf(name + ".nc", current_time, 
+                                          self.reach_ids, self.lats, self.lons, name, array)
 
         return array
 
