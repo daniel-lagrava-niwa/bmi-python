@@ -3,13 +3,13 @@ This module provides a ctypes wrapper around a bmi library.
 
 """
 
-from __future__ import print_function
 import functools
 import io
 import logging
 import os
 import platform
 import sys
+import bmi.netcdf_utils
 
 import six
 from numpy.ctypeslib import ndpointer  # nd arrays
@@ -78,9 +78,13 @@ LEVELS_F2PY[6] = logging.FATAL
 # We need this defined global, otherwise we get a segfault
 def c_log(level, message):
     """python logger to be called from fortran"""
+    print(level, message)
     c_level = level
-    level = LEVELS_F2PY[c_level]
-    logger.log(level, message)
+    try:
+        level = LEVELS_F2PY[c_level]
+        logger.log(level, message)
+    except KeyError:
+	    print("??????, the callback seems broken")
 
 # define the type of the fortran function
 fortran_log_functype = CFUNCTYPE(None, c_int, c_char_p)
@@ -228,6 +232,10 @@ class BMIWrapper(IBmi):
         '/usr/local/lib',
         '/usr/lib',
     ]
+    
+    external_to_internal_names = {
+            "gw_sw_flux" : "INSTN_Q",
+            }
 
     def __init__(self, engine, configfile=None):
         """Initialize the class.
@@ -246,8 +254,31 @@ class BMIWrapper(IBmi):
 
         if configfile is not None:
             self.configfile = configfile
+        else:
+            print("Warning: You did not provide a config file")
         self.known_paths.append('/opt/{}/lib'.format(self.engine))
         self.library = self._load_library()
+        
+        # TODO: improve this to match the fortran reach IDs
+        river_spatial_data_file = "rivSpatial.csv"
+        if configfile is not None:
+            with open(configfile) as f:
+                lines = f.readlines()
+                for line in lines:
+                    members = line.strip().split("\t")
+                    if len(members) == 2:
+                        if members[1] == "!river network":
+                            river_spatial_data_file = members[0]
+        river_data = np.genfromtxt(river_spatial_data_file, delimiter=",")
+        # We know that the reach ID is on the 4th column of the csv
+        # we ignore the first row which is the name
+        self.reach_ids = river_data[1:,3].astype(int)
+        print(self.reach_ids)
+        
+        # List of variables that should be read from netcdf
+        self.from_netcdf = ["gw_sw_flux"]
+        # List of variables that should be written to netcdf
+        self.to_netcdf = ["RiverFlow"]
 
     def _libname(self):
         """Return platform-specific modelf90 shared library name."""
@@ -309,6 +340,7 @@ class BMIWrapper(IBmi):
     def _load_library(self):
         """Return the fortran library, loaded with """
         path = self._library_path()
+        print("-->", path)
         logger.info("Loading library from path {}".format(path))
         library_dir = os.path.dirname(path)
         if platform.system() == 'Windows':
@@ -576,11 +608,12 @@ class BMIWrapper(IBmi):
         # The shape array is fixed size
         shape = np.empty((MAXDIMS, ), dtype='int32', order='F')
         shape = self.get_var_shape(name)
+        print("--->", shape)
         # there should be nothing here...
         assert sum(shape[rank:]) == 0
         # variable type name
         type_ = self.get_var_type(name)
-
+        print("--->", type_)
         is_numpytype = type_ in TYPEMAP
 
         if is_numpytype:
@@ -604,19 +637,33 @@ class BMIWrapper(IBmi):
         get_var.restype = None
         # Get the array
         get_var(c_name, byref(data))
+        print("--->", data)
+        
         if not data:
             logger.info("NULL pointer returned")
             return None
 
         if is_numpytype:
             # for now always a pointer, see python-subgrid for advanced examples
-            array = np.ctypeslib.as_array(data)
+            array = np.ctypeslib.as_array(data.contents)
         else:
             array = structs2pandas(data.contents)
 
         return array
 
     def set_var(self, name, var):
+        """
+        if name is from netcdf file, then var is the filename to read
+        """
+        # TODO: this is where we will attempt to read the .nc if needed
+        if name in self.from_netcdf:
+            print("Read from netcdf %s" % var)
+            file_name = str(var)
+            rchid, var = bmi.netcdf_utils.extract_1d_vector(file_name, name)
+            print(rchid, var)
+            name = self.external_to_internal_names[name]
+            # TODO: Check that rchid is in the same order as self.reach_ids
+        
         set_var = self.library.set_var
         set_var.argtypes = [c_char_p, c_void_p]
         set_var.restype = None
@@ -625,6 +672,16 @@ class BMIWrapper(IBmi):
         set_var(c_name, ptr)
 
     def set_var_slice(self, name, start, count, var):
+        # TODO: this is where we will attempt to read the .nc if needed
+        if name in self.from_netcdf:
+            print("Read from netcdf %s" % var)
+            file_name = str(var)
+            rchid, var = bmi.netcdf_utils.extract_1d_vector(file_name, name)
+            if rchid is None:
+                print("Unable to read nc file", file_name)
+            name = self.external_to_internal_names[name]
+            # TODO: Check that rchid is in the same order as self.reach_ids
+        
         rank = self.get_var_rank(name)
         set_var_slice = self.library.set_var_slice
         set_var_slice.argtypes = [c_char_p, c_int*rank, c_int*rank, c_void_p]
