@@ -9,13 +9,13 @@ import logging
 import os
 import platform
 import sys
-import bmi.netcdf_utils
+import bmi_routing.netcdf_utils
 
 import six
 from numpy.ctypeslib import ndpointer  # nd arrays
 import numpy as np
 
-from bmi.api import IBmi
+from bmi_routing.api import IBmi
 
 from ctypes import (
     # Types
@@ -653,7 +653,7 @@ class BMIWrapper(IBmi):
 
         if name in self.to_netcdf:
             current_time = self.get_current_time()
-            bmi.netcdf_utils.write_netcdf(name + ".nc", current_time, 
+            bmi_routing.netcdf_utils.write_netcdf(name + ".nc", current_time, 
                                           self.reach_ids, self.lats, self.lons, name, array)
 
         return array
@@ -666,7 +666,7 @@ class BMIWrapper(IBmi):
         if name in self.from_netcdf:
             print("Read from netcdf %s" % var)
             file_name = str(var)
-            rchid, var = bmi.netcdf_utils.extract_1d_vector(file_name, name)
+            rchid, var = bmi_routing.netcdf_utils.extract_1d_vector(file_name, name)
             print(rchid, var)
             name = self.external_to_internal_names[name]
             # TODO: Check that rchid is in the same order as self.reach_ids
@@ -683,7 +683,7 @@ class BMIWrapper(IBmi):
         if name in self.from_netcdf:
             print("Read from netcdf %s" % var)
             file_name = str(var)
-            rchid, var = bmi.netcdf_utils.extract_1d_vector(file_name, name)
+            rchid, var = bmi_routing.netcdf_utils.extract_1d_vector(file_name, name)
             if rchid is None:
                 print("Unable to read nc file", file_name)
             name = self.external_to_internal_names[name]

@@ -8,8 +8,8 @@ try:
 except ImportError:
     pass
 
-import bmi.wrapper
-bmi.wrapper.BMIWrapper.known_paths += ['tests']
+import bmi_routing.wrapper
+bmi_routing.wrapper.BMIWrapper.known_paths += ['tests']
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 class TestCase(unittest.TestCase):
     engine = "modelfortran"
     def setUp(self):
-        self.wrapper = bmi.wrapper.BMIWrapper(engine=self.engine,
+        self.wrapper = bmi_routing.wrapper.BMIWrapper(engine=self.engine,
                                               configfile="model.ini")
 
     @mock.patch('platform.system', lambda: 'Linux')
@@ -96,7 +96,7 @@ class TestCase(unittest.TestCase):
             npt.assert_allclose(a, b)
 
     def test_set_logger(self):
-        self.wrapper = bmi.wrapper.BMIWrapper(engine="modelc",
+        self.wrapper = bmi_routing.wrapper.BMIWrapper(engine="modelc",
                                               configfile="model.ini")
         # find the model in this directory
         logger = logging.getLogger('test')
@@ -108,10 +108,10 @@ class TestCase(unittest.TestCase):
 
 class TestCreateStringBuffer(unittest.TestCase):
     def test_create_string_buffer(self):
-        bmi.wrapper.create_string_buffer(4)
-        bmi.wrapper.create_string_buffer(b'test')
-        bmi.wrapper.create_string_buffer('test')
-        bmi.wrapper.create_string_buffer(u'test')
+        bmi_routing.wrapper.create_string_buffer(4)
+        bmi_routing.wrapper.create_string_buffer(b'test')
+        bmi_routing.wrapper.create_string_buffer('test')
+        bmi_routing.wrapper.create_string_buffer(u'test')
 
 
 

@@ -1,7 +1,7 @@
 import logging
 import unittest
 
-from bmi.api import IBmi
+from bmi_routing.api import IBmi
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)

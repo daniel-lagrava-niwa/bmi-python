@@ -20,7 +20,7 @@ bmi package
 bmi wrapper
 ===========
 
-.. automodule:: bmi.wrapper
+.. automodule:: bmi_routing.wrapper
     :members:
     :undoc-members:
     :show-inheritance:
@@ -29,7 +29,7 @@ bmi wrapper
 wrapper
 =======
 
-.. automodule:: bmi.runner
+.. automodule:: bmi_routing.runner
     :members:
     :undoc-members:
     :show-inheritance:
