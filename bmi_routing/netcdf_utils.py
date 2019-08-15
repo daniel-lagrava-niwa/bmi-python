@@ -8,11 +8,13 @@ Created on Thu Jul 11 16:27:49 2019
 import xarray as xr
 
 to_long_name = {
-        "RiverFlow" : "Routed stream flow"
+        "RiverFlow" : "Routed stream flow",
+        "RiverFlowVelocity": "River Flow Velocity"
         }
 
 to_standard_name = {
-        "RiverFlow" : "river_flow_rate"
+        "RiverFlow" : "river_flow_rate",
+        "RiverFlowVelocity": "routing__river_flow_velocity"
         }
 
 

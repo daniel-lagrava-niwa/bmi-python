@@ -280,7 +280,7 @@ class BMIWrapper(IBmi):
         # List of variables that should be read from netcdf
         self.from_netcdf = ["gw_sw_flux"]
         # List of variables that should be written to netcdf
-        self.to_netcdf = ["RiverFlow"]
+        self.to_netcdf = ["RiverFlow", "RiverFlowVelocity"]
 
     def _libname(self):
         """Return platform-specific modelf90 shared library name."""
